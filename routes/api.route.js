@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { load } = require('cheerio');
+const { encodePriceRange } = require('../utils');
 
 const router = require('express').Router();
 
@@ -9,8 +10,12 @@ router.get('/', async (req, res, next) => {
 
 router.get('/search', async (req, res, next) => {
   const BASE_URL = 'https://www.amazon.com';
-  const q = req.query?.s ?? '';
-  const url = `${BASE_URL}/s?k=${q}`;
+  let { q = '', page = 1, min_price = null, max_price = null } = req.query;
+  page = parseInt(page);
+
+  const url = `${BASE_URL}/s?k=${q}${
+    page > 1 ? '&page=' + page : ''
+  }&${encodePriceRange(min_price, max_price)}`;
   const response = await axios.get(url, {
     headers: {
       'User-Agent':
@@ -52,7 +57,7 @@ router.get('/search', async (req, res, next) => {
       };
     });
 
-  res.json({ message: 'Search for products', q, products });
+  res.json({ message: 'Search for products', url, page, q, products });
 });
 
 module.exports = router;
